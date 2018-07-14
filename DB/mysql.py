@@ -1,11 +1,12 @@
 import os
+import sys
 import configparser
 import pymysql
 
 class MysqlDB:
 
     config = configparser.ConfigParser()
-    config.read(os.getcwd() + "/setting.py")
+    config.read(os.path.split(os.path.realpath(__file__))[0] + "/../setting.py")
     #取[1:-1]是为了解决configparser出现解析配置文件，字符串带上引号的问题
     db_host = '127.0.0.1' if config.get('mysql','db_host') is '' else config.get('mysql','db_host')[1:-1]
     db_user = '' if config.get('mysql','db_user') is '' else config.get('mysql','db_user')
@@ -43,6 +44,21 @@ class MysqlDB:
         db.close()
 
     #源生sql查询，使用事务，防止数据问题
+    def drop(self, table):
+        db = self.connect()
+        cursor = db.cursor()
+        sql = "SELECT table_name FROM information_schema.TABLES WHERE table_name ='" + table + "';"
+        cursor.execute(sql)
+        res = cursor.fetchone()
+        if res == None:
+            return True
+        else:
+            sql = "DROP TABLE " + table;
+            cursor.execute(sql)
+        db.close()
+        return True
+
+    #源生sql查询，使用事务，防止数据问题
     def query(self, sql):
         db = self.connect()
         cursor = db.cursor(cursor = pymysql.cursors.DictCursor)#转化为字典
@@ -70,5 +86,4 @@ class MysqlDB:
         cursor.execute(sql, tup)
         data = cursor.fetchall()
         db.close()
-
         return data
