@@ -25,7 +25,7 @@ def commonHeader():
         "Accept-Language": "zh-CN,zh;q=0.9",
         "Cache-Control": "max-age=0",
         "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": 1,
+        "Upgrade-Insecure-Requests": "1",
         "User-Agent": user_agent
     }
     return header

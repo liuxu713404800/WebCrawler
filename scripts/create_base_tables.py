@@ -9,7 +9,7 @@ res = mysqldb.drop('proxy_pool')
 #print(res)
 sql = """
     CREATE TABLE `proxy_pool` (
-      `id` bigint(20) NOT NULL COMMENT 'id',
+      `id` bigint(20) NOT NULL AUTO_INCREMENT,
       `created` int(10) DEFAULT NULL,
       `updated` int(10) DEFAULT NULL,
       `ip` char(20) CHARACTER SET latin1 NOT NULL DEFAULT '' COMMENT '代理ip',
@@ -28,7 +28,7 @@ print("创建代理池成功！")
 res = mysqldb.drop('subway')
 sql = """
     CREATE TABLE `subway` (
-      `id` tinyint(4) NOT NULL,
+      `id` tinyint(4) NOT NULL AUTO_INCREMENT,
       `created` int(11) DEFAULT NULL,
       `updated` int(11) DEFAULT NULL,
       `name` char(50) CHARACTER SET utf8mb4 DEFAULT NULL,
@@ -43,7 +43,7 @@ print("创建地铁线路成功！")
 res = mysqldb.drop('station')
 sql = """
     CREATE TABLE `station` (
-      `id` int(11) NOT NULL,
+      `id` int(11) NOT NULL AUTO_INCREMENT,
       `created` int(11) DEFAULT NULL,
       `updated` int(11) DEFAULT NULL,
       `name` char(50) CHARACTER SET utf8mb4 DEFAULT NULL,
@@ -58,7 +58,7 @@ print("创建地铁站成功！")
 res = mysqldb.drop('subway_station')
 sql = """
     CREATE TABLE `subway_station` (
-      `id` int(11) NOT NULL,
+      `id` int(11) NOT NULL AUTO_INCREMENT,
       `created` int(10) DEFAULT NULL,
       `updated` int(10) DEFAULT NULL,
       `station_id` int(11) DEFAULT NULL,

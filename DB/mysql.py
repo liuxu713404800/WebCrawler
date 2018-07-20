@@ -87,3 +87,53 @@ class MysqlDB:
         data = cursor.fetchall()
         db.close()
         return data
+
+    #封装插入
+    def insert(self, table, data):
+        field = '('
+        values = '('
+        for key, value in data.items():
+            field = field + "`" + key + "`" + ','
+            if type(value) is int or type(value) is float:
+                values = values + str(value) + ','
+            else:
+                values = values + "'" + str(value) + "',"
+        field = field[:-1] + ')'
+        values = values[:-1] + ')'
+        # 拼装sql
+        sql = "insert into `" + table + "`" + field + " values" + values
+        print ('insert: ' + sql)
+        db = self.connect()
+        cursor = db.cursor()
+        res = cursor.execute(sql)
+        db.commit()
+        db.close()
+        return res
+
+    #封装更新
+    def update(self, table, data, condition):
+        update_field = ''
+        for key, value in data.items():
+            update_field = update_field + "`" + key + "`" + '='
+            if type(value) is int or type(value) is float:
+                update_field = update_field + str(value) + ','
+            else:
+                update_field = update_field + "'" + str(value) + "',"
+        update_field = update_field[:-1]
+
+        condition_field = ''
+        for key, value in condition.items():
+            condition_field = condition_field + ' and '  + "`" + key + "`" + '='
+            if type(value) is int or type(value) is float:
+                condition_field = condition_field + str(value)
+            else:
+                condition_field = condition_field + "'" + str(value) + "'"
+        # 拼装sql
+        sql = "update `" + table + "` set " + update_field + " where 1 = 1" + condition_field
+        print ('updated: ' + sql)
+        db = self.connect()
+        cursor = db.cursor()
+        res = cursor.execute(sql)
+        db.commit()
+        db.close()
+        return res
