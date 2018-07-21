@@ -102,7 +102,7 @@ class MysqlDB:
         values = values[:-1] + ')'
         # 拼装sql
         sql = "insert into `" + table + "`" + field + " values" + values
-        print ('insert: ' + sql)
+
         db = self.connect()
         cursor = db.cursor()
         res = cursor.execute(sql)
@@ -130,7 +130,7 @@ class MysqlDB:
                 condition_field = condition_field + "'" + str(value) + "'"
         # 拼装sql
         sql = "update `" + table + "` set " + update_field + " where 1 = 1" + condition_field
-        print ('updated: ' + sql)
+
         db = self.connect()
         cursor = db.cursor()
         res = cursor.execute(sql)
