@@ -2,9 +2,9 @@ import os
 import sys
 import configparser
 import pymysql
+import time
 
 class MysqlDB:
-
     config = configparser.ConfigParser()
     config.read(os.path.split(os.path.realpath(__file__))[0] + "/../setting.py")
     #取[1:-1]是为了解决configparser出现解析配置文件，字符串带上引号的问题
@@ -71,7 +71,7 @@ class MysqlDB:
         db.close()
         return data
 
-    #封装查询--查询单表数据
+    #封装查询--查询单表数据--全部
     def fetchALL(self, table, condition):
         # 拼装sql
         sql = "select * from " + table + " where 1 = 1"
@@ -88,8 +88,31 @@ class MysqlDB:
         db.close()
         return data
 
+    #封装查询--查询单表数据--单条
+    def fetchOne(self, table, condition):
+        # 拼装sql
+        sql = "select * from " + table + " where 1 = 1"
+        list = []
+        for key, value in condition.items():
+            sql = sql + " and " + key + " = %s"
+            list.append(value)
+        tup = tuple(list)   #将数字转化为元组，便于后续查询
+
+        db = self.connect()
+        cursor = db.cursor(cursor = pymysql.cursors.DictCursor)
+        cursor.execute(sql, tup)
+        data = cursor.fetchone()
+        db.close()
+        return data
+
     #封装插入
     def insert(self, table, data):
+        # 添加默认的新增和更新时间
+        if 'created' not in data.keys():
+            data['created'] = int(time.time())
+        if 'updated' not in data.keys():
+            data['updated'] = int(time.time())
+
         field = '('
         values = '('
         for key, value in data.items():
@@ -112,6 +135,10 @@ class MysqlDB:
 
     #封装更新
     def update(self, table, data, condition):
+        # 添加默认的更新时间
+        if 'updated' not in data.keys():
+            data['updated'] = int(time.time())
+
         update_field = ''
         for key, value in data.items():
             update_field = update_field + "`" + key + "`" + '='
@@ -136,4 +163,17 @@ class MysqlDB:
         res = cursor.execute(sql)
         db.commit()
         db.close()
+        return res
+
+    #封装更新插入更新
+    def save(self, table, data):
+        if 'id' in data.keys():
+            condition = {'id': data['id']}
+            ret = self.fetchALL(table, condition)
+            if ret:
+                res = self.update(table, data, condition)
+            else:
+                res = self.insert(table, data)
+        else:
+            res = self.insert(table, data)
         return res
