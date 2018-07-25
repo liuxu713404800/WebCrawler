@@ -1,5 +1,7 @@
 # 这是一些常用的公用方法
+import os
 import random
+import json
 
 # 对于需要改变header的场景，可以自定义，也可以使用我的方法
 def customHeader(custom_header = {}):
@@ -52,3 +54,10 @@ def randomUA():
         "Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; fr) Presto/2.9.168 Version/11.52"
     ]
     return random.choice(ua_list)
+
+def outputToFile(file, dict):
+    path = os.getcwd()
+    file = path + '/Output/' + file + '.txt'
+    f = open(file,'w')
+    f.write(json.dumps(dict))
+    f.close()

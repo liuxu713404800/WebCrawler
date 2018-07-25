@@ -11,6 +11,10 @@ def getStation():
     from Crawler import station
     station.getStation()
 
+def updatePlatformMap():
+    from Crawler import mgzf
+    mgzf.getMap()
+
 if __name__ == '__main__':
     command =  sys.argv[0]
     if len(sys.argv) == 1:
@@ -19,3 +23,5 @@ if __name__ == '__main__':
         getProxy()
     elif sys.argv[1] == 'station':
         getStation()
+    elif sys.argv[1] == 'platform_map':
+        updatePlatformMap()

@@ -2,7 +2,6 @@ import re
 from Crawler import base
 from DB import mysql
 
-
 # 抓取网上列表，以字典形式返回
 def getStation():
     url = 'http://map.bjsubway.com:8080/subwaymap2/public/subwaymap/beijing.xml'#北京地铁官网
