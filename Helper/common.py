@@ -57,7 +57,15 @@ def randomUA():
 
 def outputToFile(file, dict):
     path = os.getcwd()
-    file = path + '/Output/' + file + '.txt'
+    file = path + '/Output/' + file
     f = open(file,'w')
     f.write(json.dumps(dict))
     f.close()
+
+def getFileContents(file):
+    path = os.getcwd()
+    file = path + '/Output/' + file
+    f = open(file,'r')
+    data = json.loads(f.read())
+    f.close()
+    return data

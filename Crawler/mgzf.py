@@ -1,4 +1,5 @@
 # 蘑菇租房
+import os
 import re
 from Crawler import base
 from DB import mysql
@@ -10,27 +11,31 @@ def mgHeader():
 
 # 抓取网上列表，以字典形式返回
 def getMap():
-    header = mgHeader()
-    url = 'http://bj.mgzf.com/map'#蘑菇租房题图map
-    crawler = base.webRequest(url, '', header, '', 0)
-    data = crawler.run()
-    tinydata = re.sub(r' |\t|\r|\n|\f|\v', '', data.text)
-    pattern = '<divclass="row-blockrow-block-subway">(.+?)<divclass="clear"></div>'
-    all_contents = re.search(pattern, tinydata)
-    pattern = '<spanclass="item">(.*?)</div></span>'
-    subway_contents = re.findall(pattern, all_contents.group(1))
+    file_name = 'mgzf.txt'
+    file = os.getcwd() + '/Output/' + file_name
+    if os.path.exists(file):
+        dict = common.getFileContents(file_name)
+    else:
+        header = mgHeader()
+        url = 'http://bj.mgzf.com/map'#蘑菇租房题图map
+        crawler = base.webRequest(url, '', header, '', 0)
+        data = crawler.run()
+        tinydata = re.sub(r' |\t|\r|\n|\f|\v', '', data.text)
+        pattern = '<divclass="row-blockrow-block-subway">(.+?)<divclass="clear"></div>'
+        all_contents = re.search(pattern, tinydata)
+        pattern = '<spanclass="item">(.*?)</div></span>'
+        subway_contents = re.findall(pattern, all_contents.group(1))
 
-    dict = {}
-    for value in subway_contents:
-        pattern = 'color="#[\d\w]{6}">(.+?)</a>'
-        subway_station = re.findall(pattern, value)
-        if subway_station:
-            subway = subway_station.pop(0)
-            dict[subway] = subway_station
-        else:
-            print(subway_station)
-    common.outputToFile('mgzf', dict)
-    print(dict)
+        dict = {}
+        for value in subway_contents:
+            pattern = 'color="#[\d\w]{6}">(.+?)</a>'
+            subway_station = re.findall(pattern, value)
+            if subway_station:
+                subway = subway_station.pop(0)
+                dict[subway] = subway_station
+            else:
+                print(subway_station)
+        common.outputToFile('mgzf.txt', dict)
     return dict
 
 def saveStation(map):
