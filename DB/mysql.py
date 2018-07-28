@@ -72,7 +72,7 @@ class MysqlDB:
         return data
 
     #封装查询--查询单表数据--全部
-    def fetchALL(self, table, condition):
+    def fetchALL(self, table, condition = {}):
         # 拼装sql
         sql = "select * from " + table + " where 1 = 1"
         list = []
@@ -89,7 +89,7 @@ class MysqlDB:
         return data
 
     #封装查询--查询单表数据--单条
-    def fetchOne(self, table, condition):
+    def fetchOne(self, table, condition = {}):
         # 拼装sql
         sql = "select * from " + table + " where 1 = 1"
         list = []
@@ -134,7 +134,7 @@ class MysqlDB:
         return res
 
     #封装更新
-    def update(self, table, data, condition):
+    def update(self, table, data, condition = {}):
         # 添加默认的更新时间
         if 'updated' not in data.keys():
             data['updated'] = int(time.time())

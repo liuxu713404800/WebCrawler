@@ -1,16 +1,26 @@
 import re
+import os
 from Crawler import base
 from DB import mysql
+from Helper import common
 
 # 抓取网上列表，以字典形式返回
 def getStation():
-    url = 'http://map.bjsubway.com:8080/subwaymap2/public/subwaymap/beijing.xml'#北京地铁官网
-    crawler = base.webRequest(url, '','', '', 0)
-    data = crawler.run()
-    tinydata = re.sub(r' |\t|\r|\n|\f|\v', '', data.text)
+    file_name = 'subway_xml.txt'
+    file = os.getcwd() + '/Output/' + file_name
+    if os.path.exists(file):
+        content = common.getFileContents(file_name)
+    else:
+        url = 'http://map.bjsubway.com:8080/subwaymap2/public/subwaymap/beijing.xml'#北京地铁官网
+        crawler = base.webRequest(url, '','', '', 0)
+        data = crawler.run()
+        content = data.text
+        common.outputToFile('subway_xml.txt', content)
+    tinydata = re.sub(r' |\t|\r|\n|\f|\v', '', content)
     pattern = '<llid="(.*?)</l>'
     ret = re.findall(pattern, tinydata)
     map = {}
+    sub_id = 1
     for value in ret:
         pattern = 'lb="(.+?)"i="(\d+)"'
         subway = re.search(pattern, value)
@@ -19,7 +29,8 @@ def getStation():
         list = []
         for station in stations:
             list.append(station[2])
-        map[subway.group(2)] = {'name':subway.group(1), 'stations': list}
+        map[sub_id] = {'name':subway.group(1), 'stations': list}
+        sub_id += 1
     saveStation(map)
     return map
 

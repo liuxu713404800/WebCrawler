@@ -2,6 +2,7 @@
 import os
 import random
 import json
+from DB import mysql
 
 # 对于需要改变header的场景，可以自定义，也可以使用我的方法
 def customHeader(custom_header = {}):
@@ -55,17 +56,45 @@ def randomUA():
     ]
     return random.choice(ua_list)
 
-def outputToFile(file, dict):
+#输入输出到文件
+def outputToFile(file, content):
     path = os.getcwd()
     file = path + '/Output/' + file
     f = open(file,'w')
-    f.write(json.dumps(dict))
+    f.write(content)
     f.close()
 
 def getFileContents(file):
     path = os.getcwd()
     file = path + '/Output/' + file
-    f = open(file,'r')
-    data = json.loads(f.read())
+    f = open(file, 'r')
+    content = f.read()
     f.close()
-    return data
+    return content
+
+# 得到系统的地铁站信息
+def getSystemStations():
+    mysqldb = mysql.MysqlDB()
+    stations = mysqldb.fetchALL('station')
+    dict = {}
+    for value in stations:
+        dict[value['name']] = value['id']
+    return dict
+
+# 得到平台数据与系统的差别
+def getDiffStations(dict):
+    sys_stations = getSystemStations()
+    list = sys_stations.keys()
+
+    # 获取平台的名称
+    mg_stations = []
+    for key, value in dict.items():
+        for station in value['stations']:
+            mg_stations.append(station['name'])
+
+    # 输出不同
+    for value in mg_stations:
+        if value in list:
+            pass
+        else:
+            print(value)

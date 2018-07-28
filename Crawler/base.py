@@ -57,3 +57,7 @@ class webRequest:
 
         request.encoding = self.coding
         return request
+
+    def getCookie(self):
+         headers = requests.head(self.url).headers
+         print(headers)
