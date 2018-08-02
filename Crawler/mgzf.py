@@ -14,24 +14,49 @@ def run():
         content = common.getFileContents(file_name)
         dict = json.loads(content)
         proxy = common.getOneProxy()
-        formate_proxy = {proxy['type']: proxy['type'] + "://" + proxy['ip'] + ':' + str(proxy['port']) + '/'}
+        format_proxy = common.getFormatProxy(proxy)
 
         for key, value in dict.items():
             for station in value:
+                count = 0
                 url = base_url + '/' + station['platform_subway_mark'] + '/' + station['mark']
-                crawler = base.webRequest(url, {'page': 1}, '', 'POST', formate_proxy)
-                cookie = crawler.getCookie()
-                add_headers = {
-                    'Cookie': cookie,
-                    'Host': 'bj.mgzf.com',
-                }
-                headers = common.customHeader(add_headers)
-                crawler = base.webRequest(url, {'page': 1}, headers, 'POST', formate_proxy)
-                data = crawler.run()
-                print (data.text)
+                # 尝试抓去3次
+                while (count < 3):
+                    data = tryCrawler(url, {'page': 1}, '', 'POST', format_proxy)
+                    # 更新代理质量，并且失败情况下获得一个新的代理
+                    if data:
+                        common.proxyCallback(proxy, 1)
+                        break
+                    else:
+                        common.proxyCallback(proxy, 0)
+                        proxy = common.getOneProxy()
+                        format_proxy = common.getFormatProxy(proxy)
+                        count += 1
+                # 解析
+                if data:
+                    for room in data['roomInfos']:
+                        img_name = common.getStrMd5(room['image'])
+                        res = common.downloadImage('mgzf', img_name, room['image'])
                 exit()
     else:
         raise RuntimeError('没有基础地铁信息，请先执行基础数据爬取')
+
+def tryCrawler(url = '', params = {}, headers = {}, method = 'POST', proxy = {}):
+    crawler = base.webRequest(url, params, headers, method, proxy)
+    cookie = crawler.getCookie()
+    add_headers = {
+        'Cookie': cookie,
+        'Host': 'bj.mgzf.com',
+    }
+    headers = common.customHeader(add_headers)
+    crawler = base.webRequest(url, {'page': 1}, headers, 'POST', proxy)
+    data = crawler.run()
+    # 如果能够正常解析，说明代理有效果
+    try:
+        content = json.loads(data.text)
+    except ValueError as e:
+        content = False
+    return content
 
 # 抓取网上列表，以字典形式返回
 def getMap():

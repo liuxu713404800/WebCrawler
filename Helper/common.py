@@ -2,7 +2,9 @@
 import os
 import random
 import json
+import re
 import requests as req
+import hashlib
 from DB import mysql
 
 # 对于需要改变header的场景，可以自定义，也可以使用我的方法
@@ -64,6 +66,14 @@ def getOneProxy():
     res = mysqldb.query(sql)
     return random.choice(res)
 
+# 返回字典结构的代理
+def getFormatProxy(proxy = {}):
+    if proxy:
+        format_proxy = {proxy['type']: proxy['type'] + "://" + proxy['ip'] + ':' + str(proxy['port']) + '/'}
+    else:
+        format_proxy = {}
+    return format_proxy
+
 # 根据一定规则选择出代理
 def proxyCallback(proxy = {}, result = 1):
     success = proxy['success']
@@ -80,6 +90,37 @@ def proxyCallback(proxy = {}, result = 1):
     condition = {'id': proxy['id']}
     res = mysqldb.update('proxy_pool', data, condition)
     return res
+
+#爬取图片下载
+def downloadImage(folder, file, url):
+    path = os.getcwd()
+    folder = path + '/Images/' + folder
+    if os.path.exists(folder):
+        pass
+    else:
+        os.mkdir(folder)
+    postfix = getImagePostfix(url)
+    file = folder + '/' + file + '.' + postfix
+    proxy = getOneProxy()
+    format_proxy = getFormatProxy(proxy)
+    response = req.get(url, proxies = format_proxy)
+    img = response.content
+    with open(file, 'wb') as f:
+        f.write(img)
+
+# 获得图片的后缀
+def getImagePostfix(str):
+    res = re.search('.*.(jpg|png|jpeg|gif).*', str, re.I)
+    if res:
+        return res.group(1)
+    else:
+        raise RuntimeError('无法获得图片后缀，请检查！！！')
+
+# 获得字符串的md5值
+def getStrMd5(str):
+    h = hashlib.md5()
+    h.update(str.encode(encoding='utf-8'))
+    return h.hexdigest()
 
 #输入输出到文件
 def outputToFile(file, content):
