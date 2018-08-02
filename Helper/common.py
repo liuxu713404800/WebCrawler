@@ -2,6 +2,7 @@
 import os
 import random
 import json
+import requests as req
 from DB import mysql
 
 # 对于需要改变header的场景，可以自定义，也可以使用我的方法
@@ -55,6 +56,30 @@ def randomUA():
         "Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; fr) Presto/2.9.168 Version/11.52"
     ]
     return random.choice(ua_list)
+
+# 根据一定规则选择出代理
+def getOneProxy():
+    sql = 'select * from proxy_pool order by failed asc, success desc limit 10;'
+    mysqldb = mysql.MysqlDB()
+    res = mysqldb.query(sql)
+    return random.choice(res)
+
+# 根据一定规则选择出代理
+def proxyCallback(proxy = {}, result = 1):
+    success = proxy['success']
+    failed = proxy['failed']
+    if result == 1:
+        success += 1
+    else:
+        failed += 1
+    mysqldb = mysql.MysqlDB()
+    data = {
+        'success': success,
+        'failed':failed
+    }
+    condition = {'id': proxy['id']}
+    res = mysqldb.update('proxy_pool', data, condition)
+    return res
 
 #输入输出到文件
 def outputToFile(file, content):

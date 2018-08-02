@@ -15,6 +15,10 @@ def updatePlatformMap():
     from Crawler import mgzf
     mgzf.getMap()
 
+def work():
+    from Crawler import mgzf
+    mgzf.run()
+
 if __name__ == '__main__':
     command =  sys.argv[0]
     if len(sys.argv) == 1:
@@ -25,3 +29,5 @@ if __name__ == '__main__':
         getStation()
     elif sys.argv[1] == 'platform_map':
         updatePlatformMap()
+    elif sys.argv[1] == 'work':
+        work()
