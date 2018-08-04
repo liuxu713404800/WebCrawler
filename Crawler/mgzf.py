@@ -35,12 +35,61 @@ def run():
                 # 解析
                 if data:
                     for room in data['roomInfos']:
-                        img_name = common.getStrMd5(room['image'])
-                        res = common.downloadImage('mgzf', img_name, room['image'])
-                exit()
+                        jsonListSave(room, station['sys_station_id'])
+                else:
+                    info = "Can't crawler url: " + url + " info"
+                    print(info)
     else:
         raise RuntimeError('没有基础地铁信息，请先执行基础数据爬取')
 
+# 列表页数据整理和存储
+def jsonListSave(dict = {}, station_id = 0):
+    if dict['nickName'] == '主卧':
+        room_type = 1
+    elif dict['nickName'] == '次卧':
+        room_type = 2
+    else:
+        room_type = 0
+
+    if dict['rentType']['key'] == 2:
+        rent_type = 1
+    else:
+        rent_type = 0
+
+    commute_info = ''
+    for value in dict['metroInfo']:
+        commute_info += value + ';'
+
+    pay_method_map = {
+        0: '押一付三',
+        1: '押一付一',
+        2: '信用租'
+    }
+
+    img_name = common.getStrMd5(dict['image'])
+    res = common.downloadImage('mgzf', img_name, dict['image'])
+
+    data = {
+        'source': 3,
+        'room_id': dict['roomId'],
+        'name': dict['title'],
+        'room_type': room_type,
+        'rent_type': rent_type,
+        'compound_name': dict['comName'],
+        'compound_type': dict['flatTag'],
+        'district': dict['districtName'],
+        'price': dict['showPrice'],
+        'brief_info': dict['customTitle'],
+        'commute_info': commute_info,
+        'pay_method': pay_method_map[dict['monthlyPay']],
+        'publish_info': dict['lastPublishTimeText'],
+        'image_info': img_name,
+        'station_ref': station_id
+    }
+    mysqldb = mysql.MysqlDB()
+    res = mysqldb.insert('room', data)
+
+# 尝试抓取
 def tryCrawler(url = '', params = {}, headers = {}, method = 'POST', proxy = {}):
     crawler = base.webRequest(url, params, headers, method, proxy)
     cookie = crawler.getCookie()
