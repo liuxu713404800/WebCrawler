@@ -2,4 +2,4 @@
 *.pyc
 Output/
 */__pycache__
-Images/
+Images
