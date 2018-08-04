@@ -2,6 +2,8 @@
 import os
 import re
 import json
+import time
+import random
 from Crawler import base
 from DB import mysql
 from Helper import common
@@ -13,44 +15,43 @@ def run():
         base_url = 'http://bj.mgzf.com/list'
         content = common.getFileContents(file_name)
         dict = json.loads(content)
-        proxy = common.getOneProxy()
-        format_proxy = common.getFormatProxy(proxy)
-
         for key, value in dict.items():
             for station in value:
-                count = 0
-                url = base_url + '/' + station['platform_subway_mark'] + '/' + station['mark']
-                # 尝试抓去3次
-                while (count < 3):
-                    data = tryCrawler(url, {'page': 1}, '', 'POST', format_proxy)
-                    # 更新代理质量，并且失败情况下获得一个新的代理
-                    if data:
-                        common.proxyCallback(proxy, 1)
-                        break
-                    else:
-                        common.proxyCallback(proxy, 0)
+                total_page = 1
+                current_page = 1
+                while current_page <= total_page:
+                    url = base_url + '/' + station['platform_subway_mark'] + '/' + station['mark']
+                    # 尝试抓取10次
+                    count = 0
+                    while (count < 10):
                         proxy = common.getOneProxy()
                         format_proxy = common.getFormatProxy(proxy)
-                        count += 1
-                # 解析
-                if data:
-                    for room in data['roomInfos']:
-                        jsonListSave(room, station['sys_station_id'])
-                else:
-                    info = "Can't crawler url: " + url + " info"
-                    print(info)
+                        data = tryCrawler(url, {'page': current_page}, '', 'POST', format_proxy)
+                        # 更新代理质量，并且失败情况下获得一个新的代理
+                        if data:
+                            break
+                        else:
+                            proxy = common.getOneProxy()
+                            format_proxy = common.getFormatProxy(proxy)
+                            count += 1
+                    # 解析
+                    if data:
+                        total_page = data['totalPage']
+                        for room in data['roomInfos']:
+                            jsonListSave(room, station['sys_station_id'])
+                        info = "Crawler " + station['platform_subway_name'] + ' ' +station['name'] + ' ' + str(current_page) + " page info finished"
+                        print(info)
+                    else:
+                        info = "Can't crawler " + station['platform_subway_name'] + ' ' +station['name'] + ' ' + str(current_page) + " page info"
+                        print(info)
+                        continue
+                    current_page += 1
+                    time.sleep(random.randint(3,5))
     else:
         raise RuntimeError('没有基础地铁信息，请先执行基础数据爬取')
 
 # 列表页数据整理和存储
 def jsonListSave(dict = {}, station_id = 0):
-    if dict['nickName'] == '主卧':
-        room_type = 1
-    elif dict['nickName'] == '次卧':
-        room_type = 2
-    else:
-        room_type = 0
-
     if dict['rentType']['key'] == 2:
         rent_type = 1
     else:
@@ -60,11 +61,11 @@ def jsonListSave(dict = {}, station_id = 0):
     for value in dict['metroInfo']:
         commute_info += value + ';'
 
-    pay_method_map = {
-        0: '押一付三',
-        1: '押一付一',
-        2: '信用租'
-    }
+    # 支付方式如果能找到押一付一，则写押一付一，否则写押一付三，暂时先这么处理
+    if dict['monthlyPay'] == 1:
+        pay_method = '押一付一'
+    else:
+        pay_method = '押一付三'
 
     img_name = common.getStrMd5(dict['image'])
     res = common.downloadImage('mgzf', img_name, dict['image'])
@@ -73,7 +74,7 @@ def jsonListSave(dict = {}, station_id = 0):
         'source': 3,
         'room_id': dict['roomId'],
         'name': dict['title'],
-        'room_type': room_type,
+        'room_type': dict['nickName'],
         'rent_type': rent_type,
         'compound_name': dict['comName'],
         'compound_type': dict['flatTag'],
@@ -81,18 +82,25 @@ def jsonListSave(dict = {}, station_id = 0):
         'price': dict['showPrice'],
         'brief_info': dict['customTitle'],
         'commute_info': commute_info,
-        'pay_method': pay_method_map[dict['monthlyPay']],
+        'pay_method': pay_method,
         'publish_info': dict['lastPublishTimeText'],
         'image_info': img_name,
         'station_ref': station_id
     }
     mysqldb = mysql.MysqlDB()
-    res = mysqldb.insert('room', data)
-
+    condition = {'room_id': dict['roomId']}
+    res = mysqldb.fetchALL('room', condition)
+    if res:
+        ret = mysqldb.update('room', data, condition)
+    else:
+        ret = mysqldb.insert('room', data)
+    return ret
 # 尝试抓取
 def tryCrawler(url = '', params = {}, headers = {}, method = 'POST', proxy = {}):
     crawler = base.webRequest(url, params, headers, method, proxy)
     cookie = crawler.getCookie()
+    if cookie == False:
+        return False
     add_headers = {
         'Cookie': cookie,
         'Host': 'bj.mgzf.com',

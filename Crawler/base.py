@@ -2,6 +2,7 @@ import requests
 import re
 from Helper import common
 from Helper import proxy
+from DB import mysql
 
 class webRequest:
     # 创建默认对象值
@@ -56,11 +57,23 @@ class webRequest:
         return request
 
     def getCookie(self):
-        if self.http_fun == 'GET':
-            headers = requests.get(self.url, params = self.params, headers = self.header,  proxies = self.proxy).headers
-        elif self.http_fun == 'POST':
-            headers = requests.post(self.url, params = self.params, headers = self.header,  proxies = self.proxy).headers
-
+        # 获取数据库的代理信息
+        for key, value in self.proxy.items():
+            ip_port = value.split('/')[2]
+            ip = ip_port.split(':')[0]
+            condition = {'ip': ip}
+        mysqldb = mysql.MysqlDB()
+        proxy = mysqldb.fetchOne('proxy_pool', condition)
+        # 更新代理质量，失败返回下FALSE
+        try:
+            if self.http_fun == 'GET':
+                headers = requests.get(self.url, params = self.params, headers = self.header,  proxies = self.proxy).headers
+            elif self.http_fun == 'POST':
+                headers = requests.post(self.url, params = self.params, headers = self.header,  proxies = self.proxy).headers
+            common.proxyCallback(proxy, 0)
+        except Exception as err:
+            common.proxyCallback(proxy, 0)
+            return False
         setCookie = headers['Set-Cookie']
         content = re.sub(r' |\t|\r|\n|\f|\v', '', setCookie)
         content = content.split(';')

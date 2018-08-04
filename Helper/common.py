@@ -114,7 +114,8 @@ def getImagePostfix(str):
     if res:
         return res.group(1)
     else:
-        raise RuntimeError('无法获得图片后缀，请检查！！！')
+        # raise RuntimeError('无法获得图片后缀，请检查！！！')
+        return 'jpg'
 
 # 获得字符串的md5值
 def getStrMd5(str):

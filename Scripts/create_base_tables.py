@@ -74,11 +74,13 @@ print("创建地铁线路，地铁站关系表成功！")
 res = mysqldb.drop('subway_station')
 sql = """
     CREATE TABLE `room` (
-        `id`  int(11) NOT NULL AUTO_INCREMENT ,
+        `id`  int(11) NOT NULL AUTO_INCREMENT,
+        `created` int(10) DEFAULT NULL,
+        `updated` int(10) DEFAULT NULL,
         `source`  tinyint NOT NULL COMMENT '信息来源：1,链家；2,贝壳；3,蘑菇；4,自如；5,蛋壳' ,
         `room_id`  int(11) NOT NULL COMMENT '平台房间id' ,
         `name`  varchar(255) NULL COMMENT '房间名称' ,
-        `room_type`  tinyint NULL DEFAULT 1 COMMENT '卧室类型：0,整租;1,主卧;2,次卧' ,
+        `room_type` varchar(50) DEFAULT '' COMMENT '卧室类型',
         `rent_type`  tinyint NULL DEFAULT 1 COMMENT '出租方式：0,整租;1合租' ,
         `compound_name`  varchar(255) NULL COMMENT '小区名称' ,
         `compound_type`  tinyint NULL DEFAULT 2 COMMENT '小区类型：1,民宅;2,酒店式公寓' ,
