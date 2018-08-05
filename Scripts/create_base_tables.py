@@ -70,8 +70,8 @@ res = mysqldb.query(sql)
 # print(res)
 print("创建地铁线路，地铁站关系表成功！")
 
-#创建地铁线路，地铁站成功
-res = mysqldb.drop('subway_station')
+#创建房间表
+res = mysqldb.drop('room')
 sql = """
     CREATE TABLE `room` (
         `id`  int(11) NOT NULL AUTO_INCREMENT,
@@ -98,7 +98,7 @@ sql = """
         `publish_info`  varchar(100) NULL COMMENT '发布信息',
         `image_info` text COMMENT '房屋图片信息',
         `station_ref` int(5) DEFAULT NULL COMMENT '所属地铁',
-        `rented` tinyint(1) DEFAULT '0' COMMENT '是否已经出租：0,未出租;1,已出租',
+        `rented` tinyint DEFAULT 0 COMMENT '是否已经出租：0,未出租;1,已出租',
         PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """

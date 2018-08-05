@@ -60,16 +60,18 @@ class MysqlDB:
 
     #源生sql查询，使用事务，防止数据问题
     def query(self, sql):
+        flag = True
         db = self.connect()
         cursor = db.cursor(cursor = pymysql.cursors.DictCursor)#转化为字典
         try:
            cursor.execute(sql)
            db.commit()
+           flag = True
         except:
            db.rollback()
-        data = cursor.fetchall()
+           flag = False
         db.close()
-        return data
+        return flag
 
     #封装查询--查询单表数据--全部
     def fetchALL(self, table, condition = {}):
