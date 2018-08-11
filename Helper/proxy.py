@@ -8,7 +8,7 @@ def run():
     proxy_crawlers = getProxyUrls()
     for key, value in proxy_crawlers.items():
         if key == 'xicidaili':
-            print ('开始抓去西刺代理')
+            print ('开始抓取西刺代理')
             for url in value:
                 runXiciProxy(url)
                 time.sleep(30)
@@ -16,9 +16,9 @@ def run():
 def getProxyUrls():
     return {'xicidaili':
                 ['http://www.xicidaili.com/nn/',
-                'http://www.xicidaili.com/nt/',
-                'http://www.xicidaili.com/wn/',
-                'http://www.xicidaili.com/wt/']
+                'http://www.xicidaili.com/nn/3',
+                'http://www.xicidaili.com/nn/2',
+                'http://www.xicidaili.com/nn/4']
             }
 
 # 抓取西刺代理的代理ip

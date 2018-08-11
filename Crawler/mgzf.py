@@ -15,25 +15,19 @@ def run():
         base_url = 'http://bj.mgzf.com/list'
         content = common.getFileContents(file_name)
         dict = json.loads(content)
+        point = False
         for key, value in dict.items():
             for station in value:
+                if station['name'] == '东直门' and point == False:
+                    point = True
+                if point == False:
+                    continue
+
                 total_page = 1
                 current_page = 1
                 while current_page <= total_page:
                     url = base_url + '/' + station['platform_subway_mark'] + '/' + station['mark']
-                    # 尝试抓取10次
-                    count = 0
-                    while (count < 10):
-                        proxy = common.getOneProxy()
-                        format_proxy = common.getFormatProxy(proxy)
-                        data = tryCrawler(url, {'page': current_page}, '', 'POST', format_proxy)
-                        # 更新代理质量，并且失败情况下获得一个新的代理
-                        if data:
-                            break
-                        else:
-                            proxy = common.getOneProxy()
-                            format_proxy = common.getFormatProxy(proxy)
-                            count += 1
+                    data = crawlerPolicy(url, {'page': current_page}, '', 'POST')
                     # 解析
                     if data:
                         total_page = data['totalPage']
@@ -46,9 +40,46 @@ def run():
                         print(info)
                         continue
                     current_page += 1
-                    time.sleep(random.randint(3,5))
+                    time.sleep(random.randint(3,8))
     else:
         raise RuntimeError('没有基础地铁信息，请先执行基础数据爬取')
+
+def getRoomDetail(room_id):
+    mysqldb = mysql.MysqlDB()
+    condition = {'id': room_id}
+    room = mysqldb.fetchOne('room', condition)
+    url = 'http://bj.mgzf.com/room/' + str(room['room_id']) + '.shtml?page=list&sourceType=' + str(room['compound_type'])
+    data = crawlerPolicy(url, {}, {}, 'GET', 'detail')
+    print (data)
+
+# 创建抓取策略
+def crawlerPolicy(url = '', params = {}, headers = {}, method = 'POST', type = 'list'):
+    count = 0
+    flag = False
+    # 首先尽可能多多使用代理，检验代理质量
+    while (count < 10):
+        proxy = common.getOneProxy()
+        format_proxy = common.getFormatProxy(proxy)
+        data = tryCrawler(url, params, '', method, format_proxy, type)
+        # 更新代理质量，并且失败情况下获得一个新的代理
+        if data:
+            flag = True
+            break
+        else:
+            count += 1
+
+    # 如果十次都失败了，那么只能说是这几个代理人品不好，尝试用高质量的代理进行抓取
+    if flag == False:
+        count = 0
+        while (count < 5):
+            proxy = common.getHighQualityProxy()
+            format_proxy = common.getFormatProxy(proxy)
+            data = tryCrawler(url, params, '', method, format_proxy, type)
+            if data:
+                break
+            else:
+                count += 1
+    return data
 
 # 列表页数据整理和存储
 def jsonListSave(dict = {}, station_id = 0):
@@ -95,8 +126,10 @@ def jsonListSave(dict = {}, station_id = 0):
     else:
         ret = mysqldb.insert('room', data)
     return ret
+
 # 尝试抓取
-def tryCrawler(url = '', params = {}, headers = {}, method = 'POST', proxy = {}):
+def tryCrawler(url = '', params = {}, headers = {}, method = 'POST', proxy = {}, type = 'list'):
+    proxy = {'HTTP': 'HTTP://219.141.153.41:80'}
     crawler = base.webRequest(url, params, headers, method, proxy)
     cookie = crawler.getCookie()
     if cookie == False:
@@ -106,13 +139,19 @@ def tryCrawler(url = '', params = {}, headers = {}, method = 'POST', proxy = {})
         'Host': 'bj.mgzf.com',
     }
     headers = common.customHeader(add_headers)
-    crawler = base.webRequest(url, {'page': 1}, headers, 'POST', proxy)
+    crawler = base.webRequest(url, params, headers, method, proxy)
     data = crawler.run()
-    # 如果能够正常解析，说明代理有效果
-    try:
-        content = json.loads(data.text)
-    except ValueError as e:
-        content = False
+
+    if type == 'list':
+        # 如果能够正常解析，说明代理有效果
+        try:
+            content = json.loads(data.text)
+        except ValueError as e:
+            content = False
+    elif type == 'detail':
+        tinydata = re.sub(r' |\t|\r|\n|\f|\v', '', data.text)
+        ret = re.search(r'window.__NUXT__=(.*?);</script>', tinydata)
+        content = json.loads(ret.group(1))
     return content
 
 # 抓取网上列表，以字典形式返回

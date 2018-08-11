@@ -66,12 +66,12 @@ class MysqlDB:
         try:
            cursor.execute(sql)
            db.commit()
-           flag = True
+           data = cursor.fetchall()
         except:
            db.rollback()
-           flag = False
+           data = False
         db.close()
-        return flag
+        return data
 
     #封装查询--查询单表数据--全部
     def fetchALL(self, table, condition = {}):

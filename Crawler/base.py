@@ -70,10 +70,11 @@ class webRequest:
                 headers = requests.get(self.url, params = self.params, headers = self.header,  proxies = self.proxy).headers
             elif self.http_fun == 'POST':
                 headers = requests.post(self.url, params = self.params, headers = self.header,  proxies = self.proxy).headers
-            common.proxyCallback(proxy, 0)
+            common.proxyCallback(proxy, 1)
         except Exception as err:
             common.proxyCallback(proxy, 0)
             return False
+        
         setCookie = headers['Set-Cookie']
         content = re.sub(r' |\t|\r|\n|\f|\v', '', setCookie)
         content = content.split(';')
