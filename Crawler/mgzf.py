@@ -35,8 +35,10 @@ def run():
                         for room in data['roomInfos']:
                             jsonListSave(room, station['sys_station_id'])
                         info = "Crawler " + station['platform_subway_name'] + ' ' +station['name'] + ' ' + str(current_page) + " page info finished"
+                        print (info)
                     else:
                         info = "Can't crawler " + station['platform_subway_name'] + ' ' +station['name'] + ' ' + str(current_page) + " page info"
+                        print (info)
                         continue
                     current_page += 1
                     time.sleep(random.randint(3,8))
