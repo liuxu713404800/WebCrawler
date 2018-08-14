@@ -47,9 +47,15 @@ class webRequest:
             self.proxy = {}
 
         if self.http_fun == 'GET':
-            request = requests.get(self.url, params = self.params, headers = self.header,  proxies = self.proxy)
+            try:
+                request = requests.get(self.url, params = self.params, headers = self.header,  proxies = self.proxy)
+            except:
+                return False
         elif self.http_fun == 'POST':
-            request = requests.post(self.url, params = self.params, headers = self.header,  proxies = self.proxy)
+            try:
+                request = requests.post(self.url, params = self.params, headers = self.header,  proxies = self.proxy)
+            except:
+                return False
         else:
             raise RuntimeError('暂不支持该HTTP方法')
 
@@ -58,12 +64,7 @@ class webRequest:
 
     def getCookie(self):
         # 获取数据库的代理信息
-        for key, value in self.proxy.items():
-            ip_port = value.split('/')[2]
-            ip = ip_port.split(':')[0]
-            condition = {'ip': ip}
-        mysqldb = mysql.MysqlDB()
-        proxy = mysqldb.fetchOne('proxy_pool', condition)
+        proxy = common.getDbProxy(self.proxy)
         # 更新代理质量，失败返回下FALSE
         try:
             if self.http_fun == 'GET':
@@ -74,7 +75,7 @@ class webRequest:
         except Exception as err:
             common.proxyCallback(proxy, 0)
             return False
-        
+
         setCookie = headers['Set-Cookie']
         content = re.sub(r' |\t|\r|\n|\f|\v', '', setCookie)
         content = content.split(';')

@@ -4,6 +4,7 @@ import re
 import json
 import time
 import random
+import requests
 from Crawler import base
 from DB import mysql
 from Helper import common
@@ -34,10 +35,8 @@ def run():
                         for room in data['roomInfos']:
                             jsonListSave(room, station['sys_station_id'])
                         info = "Crawler " + station['platform_subway_name'] + ' ' +station['name'] + ' ' + str(current_page) + " page info finished"
-                        print(info)
                     else:
                         info = "Can't crawler " + station['platform_subway_name'] + ' ' +station['name'] + ' ' + str(current_page) + " page info"
-                        print(info)
                         continue
                     current_page += 1
                     time.sleep(random.randint(3,8))
@@ -50,7 +49,7 @@ def getRoomDetail(room_id):
     room = mysqldb.fetchOne('room', condition)
     url = 'http://bj.mgzf.com/room/' + str(room['room_id']) + '.shtml?page=list&sourceType=' + str(room['compound_type'])
     data = crawlerPolicy(url, {}, {}, 'GET', 'detail')
-    print (data)
+    return data, room_id
 
 # 创建抓取策略
 def crawlerPolicy(url = '', params = {}, headers = {}, method = 'POST', type = 'list'):
@@ -71,7 +70,7 @@ def crawlerPolicy(url = '', params = {}, headers = {}, method = 'POST', type = '
     # 如果十次都失败了，那么只能说是这几个代理人品不好，尝试用高质量的代理进行抓取
     if flag == False:
         count = 0
-        while (count < 5):
+        while (count < 10):
             proxy = common.getHighQualityProxy()
             format_proxy = common.getFormatProxy(proxy)
             data = tryCrawler(url, params, '', method, format_proxy, type)
@@ -79,7 +78,51 @@ def crawlerPolicy(url = '', params = {}, headers = {}, method = 'POST', type = '
                 break
             else:
                 count += 1
+    # 如果还是失败了，放弃这个房间的抓取吧，直接返回False
     return data
+
+# 尝试抓取
+def tryCrawler(url = '', params = {}, headers = {}, method = 'POST', proxy = {}, type = 'list'):
+    # crawler = base.webRequest(url, params, headers, method, proxy)
+    # cookie = crawler.getCookie()
+    # if cookie == False:
+    #     return False
+    add_headers = {
+        # 'Cookie': cookie,
+        'Host': 'bj.mgzf.com',
+    }
+
+    headers = common.customHeader(add_headers)
+    crawler = base.webRequest(url, params, headers, method, proxy)
+    data = crawler.run()
+    proxy = common.getDbProxy(proxy)
+    if data == False:
+        common.proxyCallback(proxy, 0)
+        return False
+    elif data.status_code == requests.codes.ok:
+        common.proxyCallback(proxy, 1)
+    else:
+        common.proxyCallback(proxy, 0)
+        return False
+    if type == 'list':
+        # 如果能够正常解析，说明代理有效果
+        try:
+            content = json.loads(data.text)
+        except ValueError as e:
+            content = False
+    elif type == 'detail':
+        tinydata = re.sub(r' |\t|\r|\n|\f|\v', '', data.text)
+        ret = re.search(r'<title>Servererror</title>', tinydata)
+        if ret:
+            return True
+        else:
+            ret = re.search(r'functionreload', tinydata)
+            if ret:
+                return False
+            else:
+                ret = re.search(r'window.__NUXT__=(.*?);</script>', tinydata)
+                content = json.loads(ret.group(1))
+    return content
 
 # 列表页数据整理和存储
 def jsonListSave(dict = {}, station_id = 0):
@@ -120,39 +163,69 @@ def jsonListSave(dict = {}, station_id = 0):
     }
     mysqldb = mysql.MysqlDB()
     condition = {'room_id': dict['roomId']}
-    res = mysqldb.fetchALL('room', condition)
+    res = mysqldb.fetchAll('room', condition)
     if res:
         ret = mysqldb.update('room', data, condition)
     else:
         ret = mysqldb.insert('room', data)
     return ret
 
-# 尝试抓取
-def tryCrawler(url = '', params = {}, headers = {}, method = 'POST', proxy = {}, type = 'list'):
-    proxy = {'HTTP': 'HTTP://219.141.153.41:80'}
-    crawler = base.webRequest(url, params, headers, method, proxy)
-    cookie = crawler.getCookie()
-    if cookie == False:
-        return False
-    add_headers = {
-        'Cookie': cookie,
-        'Host': 'bj.mgzf.com',
-    }
-    headers = common.customHeader(add_headers)
-    crawler = base.webRequest(url, params, headers, method, proxy)
-    data = crawler.run()
+def jsonDetailSave(dict = {}, sys_room_id = 0):
+    condition = {'id': sys_room_id}
+    data = {}
+    if dict == True or dict == False:
+        data = {
+            'rented': 1,
+        }
+        mysqldb = mysql.MysqlDB()
+        res = mysqldb.update('room', data, condition)
+        return res
 
-    if type == 'list':
-        # 如果能够正常解析，说明代理有效果
-        try:
-            content = json.loads(data.text)
-        except ValueError as e:
-            content = False
-    elif type == 'detail':
-        tinydata = re.sub(r' |\t|\r|\n|\f|\v', '', data.text)
-        ret = re.search(r'window.__NUXT__=(.*?);</script>', tinydata)
-        content = json.loads(ret.group(1))
-    return content
+    if dict['data'][0]['basicInfo']:
+        room_info = dict['data'][0]['basicInfo']['roomIntroAttrDTO']
+        # data['price'] = room_info['minAmount']
+        data['detail_info'] = room_info['roomDesc']
+        data['pay_method'] = room_info['payTypes'][0]['payDisplayValue']
+        data['foregift'] = room_info['payTypes'][0]['foregiftAmount']
+        if room_info['rentStatusVal'] == 1 or room_info['rentStatusName'] == '未出租':
+            data['rented'] = 0
+        else:
+            data['rented'] = 1
+
+        room_conf = dict['data'][0]['basicInfo']['roomDetailConfig']
+        for value in room_conf:
+            if value['groupName'] == 'unitType':
+                data['house_type'] = value['value']
+            elif value['groupName'] == 'area':
+                data['room_area'] = float(re.sub("[^\d.]", "", value['value']))
+            elif value['groupName'] == 'floor':
+                data['floor_number'] = value['value']
+
+        decoration = ''
+        if 'roomConfig' in dict['data'][0]['roomConfig'].keys():
+            for value in dict['data'][0]['roomConfig']['roomConfig']:
+                decoration += value['value'] + ','
+                data['decoration'] = decoration[:-1]
+        mysqldb = mysql.MysqlDB()
+        res = mysqldb.update('room', data, condition)
+        return res
+    else:
+        return False
+
+# 得到所有未出租的房子
+def getAllUnrentedRooms():
+    mysqldb = mysql.MysqlDB()
+    condition = {'rented': 0}
+    res = mysqldb.fetchAllIds('room', condition)
+    return res
+
+def updateRoomInfo():
+    ids = getAllUnrentedRooms()
+    for value in ids:
+        data, sys_room_id = getRoomDetail(value['id'])
+        res = jsonDetailSave(data, sys_room_id)
+        time.sleep(random.randint(3,5))
+
 
 # 抓取网上列表，以字典形式返回
 def getMap():

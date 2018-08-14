@@ -74,13 +74,32 @@ class MysqlDB:
         return data
 
     #封装查询--查询单表数据--全部
-    def fetchALL(self, table, condition = {}):
+    def fetchAll(self, table, condition = {}):
         # 拼装sql
         sql = "select * from " + table + " where 1 = 1"
         list = []
         for key, value in condition.items():
             sql = sql + " and " + key + " = %s"
             list.append(value)
+        tup = tuple(list)   #将数字转化为元组，便于后续查询
+
+        db = self.connect()
+        cursor = db.cursor(cursor = pymysql.cursors.DictCursor)
+        cursor.execute(sql, tup)
+        data = cursor.fetchall()
+        db.close()
+        return data
+
+    #封装查询--查询单表数据id--全部
+    def fetchAllIds(self, table, condition = {}):
+        # 拼装sql
+        sql = "select id from " + table + " where 1 = 1"
+        list = []
+        for key, value in condition.items():
+            sql = sql + " and " + key + " = %s"
+            list.append(value)
+
+        sql += ' order by id desc'
         tup = tuple(list)   #将数字转化为元组，便于后续查询
 
         db = self.connect()
@@ -171,7 +190,7 @@ class MysqlDB:
     def save(self, table, data):
         if 'id' in data.keys():
             condition = {'id': data['id']}
-            ret = self.fetchALL(table, condition)
+            ret = self.fetchAll(table, condition)
             if ret:
                 res = self.update(table, data, condition)
             else:

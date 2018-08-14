@@ -21,7 +21,7 @@ def getList():
 
 def getDetail():
     from Crawler import mgzf
-    mgzf.getRoomDetail(4113)
+    mgzf.updateRoomInfo()
 
 if __name__ == '__main__':
     command =  sys.argv[0]
