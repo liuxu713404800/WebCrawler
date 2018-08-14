@@ -4,6 +4,7 @@ from Crawler import base
 from DB import mysql
 from Helper import common
 
+
 # 抓取网上列表，以字典形式返回
 def getStation():
     file_name = 'subway_xml.txt'

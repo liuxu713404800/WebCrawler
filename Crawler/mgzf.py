@@ -16,13 +16,13 @@ def run():
         base_url = 'http://bj.mgzf.com/list'
         content = common.getFileContents(file_name)
         dict = json.loads(content)
-        point = False
+        # point = False
         for key, value in dict.items():
             for station in value:
-                if station['name'] == '东直门' and point == False:
-                    point = True
-                if point == False:
-                    continue
+                # if station['name'] == '东直门' and point == False:
+                #     point = True
+                # if point == False:
+                #     continue
 
                 total_page = 1
                 current_page = 1
@@ -44,6 +44,7 @@ def run():
                     time.sleep(random.randint(3,8))
     else:
         raise RuntimeError('没有基础地铁信息，请先执行基础数据爬取')
+
 
 def getRoomDetail(room_id):
     mysqldb = mysql.MysqlDB()

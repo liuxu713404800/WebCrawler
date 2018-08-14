@@ -19,6 +19,7 @@ def getList():
     from Crawler import mgzf
     mgzf.run()
 
+
 def getDetail():
     from Crawler import mgzf
     mgzf.updateRoomInfo()

@@ -4,6 +4,7 @@ from Helper import common
 from Helper import proxy
 from DB import mysql
 
+
 class webRequest:
     # 创建默认对象值
     def __init__(self, url = '', params = {}, header = {}, http_fun = 'GET', proxy = 0, coding = 'utf-8'):

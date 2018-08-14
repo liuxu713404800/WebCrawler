@@ -126,6 +126,7 @@ def getStrMd5(str):
     h.update(str.encode(encoding='utf-8'))
     return h.hexdigest()
 
+
 #输入输出到文件
 def outputToFile(file, content):
     path = os.getcwd()

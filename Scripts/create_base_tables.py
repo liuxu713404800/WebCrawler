@@ -39,6 +39,7 @@ res = mysqldb.query(sql)
 # print(res)
 print("创建地铁线路成功！")
 
+
 #创建地铁站表
 res = mysqldb.drop('station')
 sql = """

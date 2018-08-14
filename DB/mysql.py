@@ -43,6 +43,7 @@ class MysqlDB:
         # 关闭数据库连接
         db.close()
 
+
     #源生sql查询，使用事务，防止数据问题
     def drop(self, table):
         db = self.connect()
