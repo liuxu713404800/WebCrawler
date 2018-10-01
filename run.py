@@ -12,13 +12,14 @@ def getStation():
     station.getStation()
 
 def updatePlatformMap():
-    from Crawler import mgzf
-    mgzf.getMap()
+    # from Crawler import mgzf
+    from Crawler import bkzf
+    bkzf.getStandardStation()
+    # bkzf.getPlatformStation()
 
 def getList():
     from Crawler import mgzf
     mgzf.run()
-
 
 def getDetail():
     from Crawler import mgzf
