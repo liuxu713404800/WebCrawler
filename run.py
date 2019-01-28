@@ -2,6 +2,7 @@ from DB import mysql
 from Crawler import base
 import sys
 import re
+import os
 
 def getProxy():
     from Helper import proxy
