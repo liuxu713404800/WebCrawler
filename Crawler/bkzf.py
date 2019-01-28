@@ -93,8 +93,9 @@ def stationMap(platform_station):
         'li654s43144824': (316, '3号航站楼'),
         'li654s43144825': (317, '2号航站楼'),
     }
-    if platform_station[1] in map:
-        return map[platform_station[1]]
+    ps = platform_station[1]
+    if ps in map:
+        return map[ps]
     else:
         mysqldb = mysql.MysqlDB()
         condition = {'name': platform_station[2]}
