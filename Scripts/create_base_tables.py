@@ -1,4 +1,5 @@
 import sys
+import os
 sys.path.append("..")
 from DB import mysql
 
