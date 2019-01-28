@@ -31,6 +31,8 @@ def getProxyUrls():
                 'http://www.xicidaili.com/nn/6',
                 'http://www.xicidaili.com/nn/7',
                 'http://www.xicidaili.com/nn/8',
+                'http://www.xicidaili.com/nn/9',
+                'http://www.xicidaili.com/nn/10',
                 ],
             'kuaidaili':
                 ['https://www.kuaidaili.com/free/inha/1/',
